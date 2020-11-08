@@ -9,11 +9,11 @@ jobs:
     strategy:
       matrix:
         platform:
-        - { toolchain: stable, target: i686-pc-windows-msvc, os: windows-latest }
-        - { toolchain: stable, target: i686-unknown-linux-gnu, os: ubuntu-latest }
-        - { toolchain: stable, target: x86_64-apple-darwin, os: macos-latest }
-        - { toolchain: stable, target: x86_64-pc-windows-msvc, os: windows-latest }
-        - { toolchain: stable, target: x86_64-unknown-linux-gnu, os: ubuntu-latest }
+        - { toolchain: nightly, target: i686-pc-windows-msvc, os: windows-latest }
+        - { toolchain: nightly, target: i686-unknown-linux-gnu, os: ubuntu-latest }
+        - { toolchain: nightly, target: x86_64-apple-darwin, os: macos-latest }
+        - { toolchain: nightly, target: x86_64-pc-windows-msvc, os: windows-latest }
+        - { toolchain: nightly, target: x86_64-unknown-linux-gnu, os: ubuntu-latest }
     runs-on: ${{ matrix.platform.os }}
     steps:
     - uses: actions/checkout@v2
@@ -50,9 +50,6 @@ jobs:
               | "-p", "\(.name):\(.version)"
             '
         ) -Z minimal-versions
-    - uses: hecrj/setup-rust-action@v1
-      with:
-        rust-version: stable
     - uses: actions-rs/cargo@v1
       with:
         command: test
@@ -66,6 +63,8 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - uses: hecrj/setup-rust-action@v1
+      with:
+        rust-version: nightly
     - uses: actions-rs/cargo@v1
       with:
         command: install
