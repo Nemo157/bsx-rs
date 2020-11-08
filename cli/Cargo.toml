@@ -1,0 +1,20 @@
+[package]
+name = "bsx-cli"
+version = "0.1.1"
+authors = ["Wim Looman <bsx-cli.crate@nemo157.com>"]
+edition = "2018"
+description = """
+A cli utility for encoding/decoding arbitrary base encoded data
+"""
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/Nemo157/bsx-rs"
+readme = "README.md"
+
+[[bin]]
+name = "bsx"
+path = "src/main.rs"
+
+[dependencies]
+bsx = { version = "0.1.0", path = ".." }
+structopt = { version = "0.3.0", default-features = false, features = ["color"] }
+anyhow = { version = "1.0.26", default-features = false, features = ["std"] }
