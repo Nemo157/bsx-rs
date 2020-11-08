@@ -68,7 +68,7 @@ pub use alphabet::Alphabet;
 pub mod decode;
 pub mod encode;
 
-/// Setup decoder for the given string using the [default alphabet][Alphabet::DEFAULT].
+/// Setup decoder for the given string using the given alphabet
 ///
 /// # Examples
 ///
@@ -140,7 +140,7 @@ pub fn decode<I: AsRef<[u8]>, const LEN: usize>(
     decode::DecodeBuilder::new(input, alphabet)
 }
 
-/// Setup encoder for the given bytes using the [default alphabet][Alphabet::DEFAULT].
+/// Setup encoder for the given bytes using the given alphabet
 ///
 /// # Examples
 ///
