@@ -74,14 +74,12 @@ fn main() -> anyhow::Result<()> {
         let mut input = String::with_capacity(INITIAL_INPUT_CAPACITY);
         io::stdin().read_to_string(&mut input)?;
         let trimmed = input.trim_end();
-        let output = bsx::decode(trimmed, args.alphabet.as_alphabet())
-            .into_vec()?;
+        let output = bsx::decode(trimmed, args.alphabet.as_alphabet()).into_vec()?;
         io::stdout().write_all(&output)?;
     } else {
         let mut input = Vec::with_capacity(INITIAL_INPUT_CAPACITY);
         io::stdin().read_to_end(&mut input)?;
-        let output = bsx::encode(input, args.alphabet.as_alphabet())
-            .into_string();
+        let output = bsx::encode(input, args.alphabet.as_alphabet()).into_string();
         io::stdout().write_all(output.as_bytes())?;
     }
 

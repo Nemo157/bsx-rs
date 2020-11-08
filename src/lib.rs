@@ -8,6 +8,7 @@
 #![warn(unused_extern_crates)]
 #![warn(unused_import_braces)]
 #![warn(variant_size_differences)]
+#![warn(rust_2018_idioms)]
 #![doc(test(attr(deny(warnings))))]
 #![feature(min_const_generics)]
 
@@ -67,7 +68,7 @@ pub use alphabet::Alphabet;
 pub mod decode;
 pub mod encode;
 
-/// Setup decoder for the given string using the [default alphabet][Alphabet::DEFAULT].
+/// Setup decoder for the given string using the given alphabet
 ///
 /// # Examples
 ///
@@ -132,11 +133,14 @@ pub mod encode;
 ///     bsx::decode::Error::BufferTooSmall,
 ///     bsx::decode("he11owor1d", bsx::Alphabet::<58>::BITCOIN).into(&mut output).unwrap_err());
 /// ```
-pub fn decode<'a, I: AsRef<[u8]>, const LEN: usize>(input: I, alphabet: &'a Alphabet<LEN>) -> decode::DecodeBuilder<'a, I, LEN> {
+pub fn decode<I: AsRef<[u8]>, const LEN: usize>(
+    input: I,
+    alphabet: &Alphabet<LEN>,
+) -> decode::DecodeBuilder<'_, I, LEN> {
     decode::DecodeBuilder::new(input, alphabet)
 }
 
-/// Setup encoder for the given bytes using the [default alphabet][Alphabet::DEFAULT].
+/// Setup encoder for the given bytes using the given alphabet
 ///
 /// # Examples
 ///
@@ -181,6 +185,9 @@ pub fn decode<'a, I: AsRef<[u8]>, const LEN: usize>(input: I, alphabet: &'a Alph
 ///     bsx::encode::Error::BufferTooSmall,
 ///     bsx::encode(input, bsx::Alphabet::<58>::BITCOIN).into(&mut output[..]).unwrap_err());
 /// ```
-pub fn encode<'a, I: AsRef<[u8]>, const LEN: usize>(input: I, alphabet: &'a Alphabet<LEN>) -> encode::EncodeBuilder<'a, I, LEN> {
+pub fn encode<I: AsRef<[u8]>, const LEN: usize>(
+    input: I,
+    alphabet: &Alphabet<LEN>,
+) -> encode::EncodeBuilder<'_, I, LEN> {
     encode::EncodeBuilder::new(input, alphabet)
 }

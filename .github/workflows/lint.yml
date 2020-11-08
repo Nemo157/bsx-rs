@@ -10,7 +10,9 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - uses: hecrj/setup-rust-action@v1
-      with: { components: rustfmt }
+      with:
+        rust-version: nightly
+        components: rustfmt
     - uses: actions-rs/cargo@v1
       with:
         command: fmt
@@ -22,7 +24,9 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - uses: hecrj/setup-rust-action@v1
-      with: { components: clippy }
+      with:
+        rust-version: nightly
+        components: clippy
     - uses: actions-rs/cargo@v1
       with:
         command: clippy
