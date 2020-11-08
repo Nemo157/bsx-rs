@@ -132,7 +132,10 @@ pub mod encode;
 ///     bsx::decode::Error::BufferTooSmall,
 ///     bsx::decode("he11owor1d", bsx::Alphabet::<58>::BITCOIN).into(&mut output).unwrap_err());
 /// ```
-pub fn decode<'a, I: AsRef<[u8]>, const LEN: usize>(input: I, alphabet: &'a Alphabet<LEN>) -> decode::DecodeBuilder<'a, I, LEN> {
+pub fn decode<'a, I: AsRef<[u8]>, const LEN: usize>(
+    input: I,
+    alphabet: &'a Alphabet<LEN>,
+) -> decode::DecodeBuilder<'a, I, LEN> {
     decode::DecodeBuilder::new(input, alphabet)
 }
 
@@ -181,6 +184,9 @@ pub fn decode<'a, I: AsRef<[u8]>, const LEN: usize>(input: I, alphabet: &'a Alph
 ///     bsx::encode::Error::BufferTooSmall,
 ///     bsx::encode(input, bsx::Alphabet::<58>::BITCOIN).into(&mut output[..]).unwrap_err());
 /// ```
-pub fn encode<'a, I: AsRef<[u8]>, const LEN: usize>(input: I, alphabet: &'a Alphabet<LEN>) -> encode::EncodeBuilder<'a, I, LEN> {
+pub fn encode<'a, I: AsRef<[u8]>, const LEN: usize>(
+    input: I,
+    alphabet: &'a Alphabet<LEN>,
+) -> encode::EncodeBuilder<'a, I, LEN> {
     encode::EncodeBuilder::new(input, alphabet)
 }

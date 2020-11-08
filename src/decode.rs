@@ -46,10 +46,7 @@ pub enum Error {
 
 impl<'a, I: AsRef<[u8]>, const LEN: usize> DecodeBuilder<'a, I, LEN> {
     pub(crate) fn new(input: I, alpha: &'a Alphabet<LEN>) -> Self {
-        DecodeBuilder {
-            input,
-            alpha,
-        }
+        DecodeBuilder { input, alpha }
     }
 
     /// Change the alphabet that will be used for decoding.
@@ -64,7 +61,7 @@ impl<'a, I: AsRef<[u8]>, const LEN: usize> DecodeBuilder<'a, I, LEN> {
     ///         .into_vec()?);
     /// # Ok::<(), bsx::decode::Error>(())
     /// ```
-    pub fn with_alphabet(self, alpha: &'a Alphabet::<LEN>) -> Self {
+    pub fn with_alphabet(self, alpha: &'a Alphabet<LEN>) -> Self {
         DecodeBuilder { alpha, ..self }
     }
 
@@ -115,7 +112,11 @@ impl<'a, I: AsRef<[u8]>, const LEN: usize> DecodeBuilder<'a, I, LEN> {
     }
 }
 
-fn decode_into<const LEN: usize>(input: &[u8], output: &mut [u8], alpha: &Alphabet::<LEN>) -> Result<usize> {
+fn decode_into<const LEN: usize>(
+    input: &[u8],
+    output: &mut [u8],
+    alpha: &Alphabet<LEN>,
+) -> Result<usize> {
     let mut index = 0;
     let zero = alpha.encode[0];
 
@@ -163,10 +164,9 @@ impl std::error::Error for Error {}
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            Error::BufferTooSmall => write!(
-                f,
-                "buffer provided to decode string into was too small"
-            ),
+            Error::BufferTooSmall => {
+                write!(f, "buffer provided to decode string into was too small")
+            }
             Error::InvalidCharacter { character, index } => write!(
                 f,
                 "provided string contained invalid character {:?} at byte {}",

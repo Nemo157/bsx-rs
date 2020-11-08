@@ -139,10 +139,7 @@ impl<'a, I: AsRef<[u8]>, const LEN: usize> EncodeBuilder<'a, I, LEN> {
     };
 
     pub(crate) fn new(input: I, alpha: &'a Alphabet<LEN>) -> Self {
-        EncodeBuilder {
-            input,
-            alpha,
-        }
+        EncodeBuilder { input, alpha }
     }
 
     /// Change the alphabet that will be used for encoding.
@@ -266,7 +263,11 @@ impl<'a, I: AsRef<[u8]>, const LEN: usize> EncodeBuilder<'a, I, LEN> {
     }
 }
 
-fn encode_into<'a, I, const LEN: usize>(input: I, output: &mut [u8], alpha: &Alphabet<LEN>) -> Result<usize>
+fn encode_into<'a, I, const LEN: usize>(
+    input: I,
+    output: &mut [u8],
+    alpha: &Alphabet<LEN>,
+) -> Result<usize>
 where
     I: Clone + IntoIterator<Item = &'a u8>,
 {
@@ -311,10 +312,9 @@ impl std::error::Error for Error {}
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            Error::BufferTooSmall => write!(
-                f,
-                "buffer provided to encode string into was too small"
-            ),
+            Error::BufferTooSmall => {
+                write!(f, "buffer provided to encode string into was too small")
+            }
         }
     }
 }
