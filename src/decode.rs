@@ -162,7 +162,7 @@ fn decode_into<const LEN: usize>(
 impl std::error::Error for Error {}
 
 impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
             Error::BufferTooSmall => {
                 write!(f, "buffer provided to decode string into was too small")
