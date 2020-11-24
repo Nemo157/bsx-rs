@@ -7,19 +7,25 @@ fn test_encode() {
     for &(val, s) in cases::TEST_CASES.iter() {
         assert_eq!(
             s,
-            bsx::encode(val, bsx::Alphabet::<58>::BITCOIN).into_string()
+            bsx::encode(val)
+                .with_alphabet(bsx::StaticAlphabet::BITCOIN)
+                .into_string()
         );
 
         assert_eq!(
             s.as_bytes(),
-            &*bsx::encode(val, bsx::Alphabet::<58>::BITCOIN).into_vec()
+            &*bsx::encode(val)
+                .with_alphabet(bsx::StaticAlphabet::BITCOIN)
+                .into_vec()
         );
 
         {
             let mut bytes = FILLER;
             assert_eq!(
                 Ok(s.len()),
-                bsx::encode(val, bsx::Alphabet::<58>::BITCOIN).into(&mut bytes[..])
+                bsx::encode(val)
+                    .with_alphabet(bsx::StaticAlphabet::BITCOIN)
+                    .into(&mut bytes[..])
             );
             assert_eq!(s.as_bytes(), &bytes[..s.len()]);
             assert_eq!(&FILLER[s.len()..], &bytes[s.len()..]);
@@ -33,7 +39,9 @@ fn test_encode() {
             let string = core::str::from_utf8_mut(&mut bytes[..]).unwrap();
             assert_eq!(
                 Ok(s.len()),
-                bsx::encode(val, bsx::Alphabet::<58>::BITCOIN).into(string)
+                bsx::encode(val)
+                    .with_alphabet(bsx::StaticAlphabet::BITCOIN)
+                    .into(string)
             );
             assert_eq!(s.as_bytes(), &bytes[..s.len()]);
             if !s.is_empty() {

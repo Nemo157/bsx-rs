@@ -21,11 +21,19 @@ macro_rules! group_encode {
             b.iter(|| bs58::encode($decoded).into(&mut output));
         });
         group.bench_function("encode_bsx", |b| {
-            b.iter(|| bsx::encode($decoded, bsx::Alphabet::<58>::BITCOIN).into_string())
+            b.iter(|| {
+                bsx::encode($decoded)
+                    .with_alphabet(bsx::Alphabet::BITCOIN)
+                    .into_string()
+            })
         });
         group.bench_function("encode_bsx_noalloc", |b| {
             let mut output = String::with_capacity($encoded.len());
-            b.iter(|| bsx::encode($decoded, bsx::Alphabet::<58>::BITCOIN).into(&mut output));
+            b.iter(|| {
+                bsx::encode($decoded)
+                    .with_alphabet(bsx::Alphabet::BITCOIN)
+                    .into(&mut output)
+            });
         });
         group.finish();
     }};

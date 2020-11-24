@@ -5,13 +5,13 @@ use core::fmt;
 #[cfg(feature = "alloc")]
 use alloc::{string::String, vec::Vec};
 
-use crate::Alphabet;
+use crate::{alphabet::Unspecified, Alphabet};
 
 /// A builder for setting up the alphabet and output of an encode.
 #[allow(missing_debug_implementations)]
-pub struct EncodeBuilder<'a, I: AsRef<[u8]>, const LEN: usize> {
+pub struct EncodeBuilder<I: AsRef<[u8]>, A> {
     input: I,
-    alpha: &'a Alphabet<LEN>,
+    alpha: A,
 }
 
 /// A specialized [`Result`](core::result::Result) type for [`bsx::encode`](module@crate::encode)
@@ -129,19 +129,16 @@ impl EncodeTarget for str {
     }
 }
 
-impl<'a, I: AsRef<[u8]>, const LEN: usize> EncodeBuilder<'a, I, LEN> {
-    const ENCODED_LEN_DIVISOR: usize = {
-        if LEN.is_power_of_two() {
-            LEN.trailing_zeros() as usize
-        } else {
-            (0usize.leading_zeros() - LEN.leading_zeros() - 1) as usize
+impl<I: AsRef<[u8]>> EncodeBuilder<I, Unspecified> {
+    pub(crate) fn new(input: I) -> Self {
+        EncodeBuilder {
+            input,
+            alpha: Unspecified,
         }
-    };
-
-    pub(crate) fn new(input: I, alpha: &'a Alphabet<LEN>) -> Self {
-        EncodeBuilder { input, alpha }
     }
+}
 
+impl<I: AsRef<[u8]>, A> EncodeBuilder<I, A> {
     /// Change the alphabet that will be used for encoding.
     ///
     /// # Examples
@@ -150,21 +147,26 @@ impl<'a, I: AsRef<[u8]>, const LEN: usize> EncodeBuilder<'a, I, LEN> {
     /// let input = [0x60, 0x65, 0xe7, 0x9b, 0xba, 0x2f, 0x78];
     /// assert_eq!(
     ///     "he11owor1d",
-    ///     bsx::encode(input, bsx::Alphabet::<58>::BITCOIN)
-    ///         .with_alphabet(bsx::Alphabet::RIPPLE)
+    ///     bsx::encode(input)
+    ///         .with_alphabet(bsx::StaticAlphabet::RIPPLE)
     ///         .into_string());
     /// ```
-    pub fn with_alphabet(self, alpha: &'a Alphabet<LEN>) -> Self {
-        EncodeBuilder { alpha, ..self }
+    pub fn with_alphabet<B>(self, alpha: B) -> EncodeBuilder<I, B> {
+        EncodeBuilder {
+            input: self.input,
+            alpha,
+        }
     }
+}
 
+impl<I: AsRef<[u8]>, A: Alphabet> EncodeBuilder<I, A> {
     /// Encode into a new owned string.
     ///
     /// # Examples
     ///
     /// ```rust
     /// let input = [0x04, 0x30, 0x5e, 0x2b, 0x24, 0x73, 0xf0, 0x58];
-    /// assert_eq!("he11owor1d", bsx::encode(input, bsx::Alphabet::<58>::BITCOIN).into_string());
+    /// assert_eq!("he11owor1d", bsx::encode(input).with_alphabet(bsx::StaticAlphabet::BITCOIN).into_string());
     /// ```
     #[cfg(feature = "alloc")]
     #[cfg_attr(docsrs, doc(cfg(any(feature = "alloc", feature = "std"))))]
@@ -180,7 +182,7 @@ impl<'a, I: AsRef<[u8]>, const LEN: usize> EncodeBuilder<'a, I, LEN> {
     ///
     /// ```rust
     /// let input = [0x04, 0x30, 0x5e, 0x2b, 0x24, 0x73, 0xf0, 0x58];
-    /// assert_eq!(b"he11owor1d", &*bsx::encode(input, bsx::Alphabet::<58>::BITCOIN).into_vec());
+    /// assert_eq!(b"he11owor1d", &*bsx::encode(input).with_alphabet(bsx::StaticAlphabet::BITCOIN).into_vec());
     /// ```
     #[cfg(feature = "alloc")]
     #[cfg_attr(docsrs, doc(cfg(any(feature = "alloc", feature = "std"))))]
@@ -211,7 +213,7 @@ impl<'a, I: AsRef<[u8]>, const LEN: usize> EncodeBuilder<'a, I, LEN> {
     /// ```rust
     /// let input = [0x04, 0x30, 0x5e, 0x2b, 0x24, 0x73, 0xf0, 0x58];
     /// let mut output = "goodbye world".to_owned().into_bytes();
-    /// bsx::encode(input, bsx::Alphabet::<58>::BITCOIN).into(&mut output)?;
+    /// bsx::encode(input).with_alphabet(bsx::StaticAlphabet::BITCOIN).into(&mut output)?;
     /// assert_eq!(b"he11owor1d", &*output);
     /// # Ok::<(), bsx::encode::Error>(())
     /// ```
@@ -221,7 +223,7 @@ impl<'a, I: AsRef<[u8]>, const LEN: usize> EncodeBuilder<'a, I, LEN> {
     /// ```rust
     /// let input = [0x04, 0x30, 0x5e, 0x2b, 0x24, 0x73, 0xf0, 0x58];
     /// let mut output = Vec::from("goodbye world");
-    /// bsx::encode(input, bsx::Alphabet::<58>::BITCOIN).into(&mut output[..])?;
+    /// bsx::encode(input).with_alphabet(bsx::StaticAlphabet::BITCOIN).into(&mut output[..])?;
     /// assert_eq!(b"he11owor1drld", &*output);
     /// # Ok::<(), bsx::encode::Error>(())
     /// ```
@@ -231,7 +233,7 @@ impl<'a, I: AsRef<[u8]>, const LEN: usize> EncodeBuilder<'a, I, LEN> {
     /// ```rust
     /// let input = [0x04, 0x30, 0x5e, 0x2b, 0x24, 0x73, 0xf0, 0x58];
     /// let mut output = "goodbye world".to_owned();
-    /// bsx::encode(input, bsx::Alphabet::<58>::BITCOIN).into(&mut output)?;
+    /// bsx::encode(input).with_alphabet(bsx::StaticAlphabet::BITCOIN).into(&mut output)?;
     /// assert_eq!("he11owor1d", output);
     /// # Ok::<(), bsx::encode::Error>(())
     /// ```
@@ -241,7 +243,7 @@ impl<'a, I: AsRef<[u8]>, const LEN: usize> EncodeBuilder<'a, I, LEN> {
     /// ```rust
     /// let input = [0x04, 0x30, 0x5e, 0x2b, 0x24, 0x73, 0xf0, 0x58];
     /// let mut output = "goodbye world".to_owned();
-    /// bsx::encode(input, bsx::Alphabet::<58>::BITCOIN).into(output.as_mut_str())?;
+    /// bsx::encode(input).with_alphabet(bsx::StaticAlphabet::BITCOIN).into(output.as_mut_str())?;
     /// assert_eq!("he11owor1drld", output);
     /// # Ok::<(), bsx::encode::Error>(())
     /// ```
@@ -251,45 +253,48 @@ impl<'a, I: AsRef<[u8]>, const LEN: usize> EncodeBuilder<'a, I, LEN> {
     /// ```rust
     /// let input = [0x04, 0x30, 0x5e, 0x2b, 0x24, 0x73, 0xf0, 0x58];
     /// let mut output = "goodbye w®ld".to_owned();
-    /// bsx::encode(input, bsx::Alphabet::<58>::BITCOIN).into(output.as_mut_str())?;
+    /// bsx::encode(input).with_alphabet(bsx::StaticAlphabet::BITCOIN).into(output.as_mut_str())?;
     /// assert_eq!("he11owor1d\0ld", output);
     /// # Ok::<(), bsx::encode::Error>(())
     /// ```
     pub fn into(self, mut output: impl EncodeTarget) -> Result<usize> {
-        let max_encoded_len = (self.input.as_ref().len() * 8) / Self::ENCODED_LEN_DIVISOR + 1;
+        let encoded_len_divisor = {
+            let len = self.alpha.len();
+            if len.is_power_of_two() {
+                len.trailing_zeros() as usize
+            } else {
+                (0usize.leading_zeros() - len.leading_zeros() - 1) as usize
+            }
+        };
+        let max_encoded_len = (self.input.as_ref().len() * 8) / encoded_len_divisor + 1;
         output.encode_with(max_encoded_len, |output| {
             encode_into(self.input.as_ref(), output, &self.alpha)
         })
     }
 }
 
-fn encode_into<'a, I, const LEN: usize>(
-    input: I,
-    output: &mut [u8],
-    alpha: &Alphabet<LEN>,
-) -> Result<usize>
-where
-    I: Clone + IntoIterator<Item = &'a u8>,
-{
+fn encode_into(input: &[u8], output: &mut [u8], alpha: impl Alphabet) -> Result<usize> {
+    let (len, encode) = (alpha.len(), alpha.encode());
+
     let mut index = 0;
-    for &val in input.clone() {
+    for &val in input {
         let mut carry = val as usize;
         for byte in &mut output[..index] {
             carry += (*byte as usize) << 8;
-            *byte = (carry % LEN) as u8;
-            carry /= LEN;
+            *byte = (carry % len) as u8;
+            carry /= len;
         }
         while carry > 0 {
             if index == output.len() {
                 return Err(Error::BufferTooSmall);
             }
-            output[index] = (carry % LEN) as u8;
+            output[index] = (carry % len) as u8;
             index += 1;
-            carry /= LEN;
+            carry /= len;
         }
     }
 
-    for _ in input.into_iter().take_while(|v| **v == 0) {
+    for _ in input.iter().take_while(|&&v| v == 0) {
         if index == output.len() {
             return Err(Error::BufferTooSmall);
         }
@@ -298,7 +303,7 @@ where
     }
 
     for val in &mut output[..index] {
-        *val = alpha.encode[*val as usize];
+        *val = encode[*val as usize];
     }
 
     output[..index].reverse();

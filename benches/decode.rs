@@ -26,7 +26,8 @@ macro_rules! group_decode {
         });
         group.bench_function("decode_bsx", |b| {
             b.iter(|| {
-                bsx::decode($encoded, bsx::Alphabet::<58>::BITCOIN)
+                bsx::decode($encoded)
+                    .with_alphabet(bsx::Alphabet::BITCOIN)
                     .into_vec()
                     .unwrap()
             })
@@ -34,7 +35,8 @@ macro_rules! group_decode {
         group.bench_function("decode_bsx_noalloc_slice", |b| {
             let mut output = [0; $decoded_length];
             b.iter(|| {
-                bsx::decode($encoded, bsx::Alphabet::<58>::BITCOIN)
+                bsx::decode($encoded)
+                    .with_alphabet(bsx::Alphabet::BITCOIN)
                     .into(&mut output[..])
                     .unwrap()
             });
@@ -42,7 +44,8 @@ macro_rules! group_decode {
         group.bench_function("decode_bsx_noalloc_array", |b| {
             let mut output = [0; $decoded_length];
             b.iter(|| {
-                bsx::decode($encoded, bsx::Alphabet::<58>::BITCOIN)
+                bsx::decode($encoded)
+                    .with_alphabet(bsx::Alphabet::BITCOIN)
                     .into(&mut output)
                     .unwrap()
             });
@@ -73,7 +76,8 @@ macro_rules! group_decode_long {
         });
         group.bench_function("decode_bsx", |b| {
             b.iter(|| {
-                bsx::decode($encoded, bsx::Alphabet::<58>::BITCOIN)
+                bsx::decode($encoded)
+                    .with_alphabet(bsx::Alphabet::BITCOIN)
                     .into_vec()
                     .unwrap()
             })
@@ -81,7 +85,8 @@ macro_rules! group_decode_long {
         group.bench_function("decode_bsx_noalloc_slice", |b| {
             let mut output = [0; $decoded_length];
             b.iter(|| {
-                bsx::decode($encoded, bsx::Alphabet::<58>::BITCOIN)
+                bsx::decode($encoded)
+                    .with_alphabet(bsx::Alphabet::BITCOIN)
                     .into(&mut output[..])
                     .unwrap()
             });
@@ -89,7 +94,8 @@ macro_rules! group_decode_long {
         group.bench_function("decode_bsx_noalloc_array", |b| {
             let mut output = [0; $decoded_length];
             b.iter(|| {
-                bsx::decode($encoded, bsx::Alphabet::<58>::BITCOIN)
+                bsx::decode($encoded)
+                    .with_alphabet(bsx::Alphabet::BITCOIN)
                     .into(&mut output)
                     .unwrap()
             });
