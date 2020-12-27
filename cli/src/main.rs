@@ -1,6 +1,5 @@
-use anyhow::{anyhow, Context};
+use anyhow::anyhow;
 use std::{
-    convert::TryInto,
     io::{self, Read, Write},
     str::FromStr,
 };
@@ -12,16 +11,16 @@ enum Alphabet {
     Monero,
     Ripple,
     Flickr,
-    Custom(bsx::Alphabet<58>),
+    Custom(bsx::DynamicAlphabet<Vec<u8>>),
 }
 
 impl Alphabet {
-    fn as_alphabet(&self) -> &bsx::Alphabet<58> {
+    fn as_alphabet(&self) -> &dyn bsx::Alphabet {
         match self {
-            Alphabet::Bitcoin => bsx::Alphabet::<58>::BITCOIN,
-            Alphabet::Monero => bsx::Alphabet::<58>::MONERO,
-            Alphabet::Ripple => bsx::Alphabet::<58>::RIPPLE,
-            Alphabet::Flickr => bsx::Alphabet::<58>::FLICKR,
+            Alphabet::Bitcoin => bsx::Alphabet::BITCOIN,
+            Alphabet::Monero => bsx::Alphabet::MONERO,
+            Alphabet::Ripple => bsx::Alphabet::RIPPLE,
+            Alphabet::Flickr => bsx::Alphabet::FLICKR,
             Alphabet::Custom(custom) => custom,
         }
     }
@@ -38,11 +37,7 @@ impl FromStr for Alphabet {
             "flickr" => Alphabet::Flickr,
             custom if custom.starts_with("custom(") && custom.ends_with(')') => {
                 let alpha = custom.trim_start_matches("custom(").trim_end_matches(')');
-                let bytes = alpha
-                    .as_bytes()
-                    .try_into()
-                    .context("custom alphabet is not 58 characters long")?;
-                Alphabet::Custom(bsx::Alphabet::new(bytes)?)
+                Alphabet::Custom(bsx::DynamicAlphabet::new(alpha.into())?)
             }
             other => {
                 return Err(anyhow!("'{}' is not a known alphabet", other));
@@ -74,12 +69,16 @@ fn main() -> anyhow::Result<()> {
         let mut input = String::with_capacity(INITIAL_INPUT_CAPACITY);
         io::stdin().read_to_string(&mut input)?;
         let trimmed = input.trim_end();
-        let output = bsx::decode(trimmed, args.alphabet.as_alphabet()).into_vec()?;
+        let output = bsx::decode(trimmed)
+            .with_alphabet(args.alphabet.as_alphabet())
+            .into_vec()?;
         io::stdout().write_all(&output)?;
     } else {
         let mut input = Vec::with_capacity(INITIAL_INPUT_CAPACITY);
         io::stdin().read_to_end(&mut input)?;
-        let output = bsx::encode(input, args.alphabet.as_alphabet()).into_string();
+        let output = bsx::encode(input)
+            .with_alphabet(args.alphabet.as_alphabet())
+            .into_string();
         io::stdout().write_all(output.as_bytes())?;
     }
 

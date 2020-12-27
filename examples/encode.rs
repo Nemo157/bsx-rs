@@ -5,7 +5,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     io::stdin().read_to_end(&mut input)?;
     println!(
         "{}",
-        bsx::encode(input, bsx::Alphabet::<58>::BITCOIN).into_string()
+        bsx::encode(input)
+            .with_alphabet(bsx::StaticAlphabet::BITCOIN)
+            .into_string()
     );
     Ok(())
 }

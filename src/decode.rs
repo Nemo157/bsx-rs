@@ -5,16 +5,16 @@ use core::fmt;
 #[cfg(feature = "alloc")]
 use alloc::{vec, vec::Vec};
 
-use crate::Alphabet;
+use crate::{alphabet::Unspecified, Alphabet};
 
 /// A builder for setting up the alphabet and output of a decode.
 ///
 /// See the documentation for [`bsx::decode`](crate::decode()) for a more
 /// high level view of how to use this.
 #[allow(missing_debug_implementations)]
-pub struct DecodeBuilder<'a, I: AsRef<[u8]>, const LEN: usize> {
+pub struct DecodeBuilder<I: AsRef<[u8]>, A> {
     input: I,
-    alpha: &'a Alphabet<LEN>,
+    alpha: A,
 }
 
 /// A specialized [`Result`](core::result::Result) type for [`bsx::decode`](module@crate::decode)
@@ -44,11 +44,16 @@ pub enum Error {
     },
 }
 
-impl<'a, I: AsRef<[u8]>, const LEN: usize> DecodeBuilder<'a, I, LEN> {
-    pub(crate) fn new(input: I, alpha: &'a Alphabet<LEN>) -> Self {
-        DecodeBuilder { input, alpha }
+impl<I: AsRef<[u8]>> DecodeBuilder<I, Unspecified> {
+    pub(crate) fn new(input: I) -> Self {
+        DecodeBuilder {
+            input,
+            alpha: Unspecified,
+        }
     }
+}
 
+impl<I: AsRef<[u8]>, A> DecodeBuilder<I, A> {
     /// Change the alphabet that will be used for decoding.
     ///
     /// # Examples
@@ -56,15 +61,20 @@ impl<'a, I: AsRef<[u8]>, const LEN: usize> DecodeBuilder<'a, I, LEN> {
     /// ```rust
     /// assert_eq!(
     ///     vec![0x60, 0x65, 0xe7, 0x9b, 0xba, 0x2f, 0x78],
-    ///     bsx::decode("he11owor1d", bsx::Alphabet::<58>::BITCOIN)
-    ///         .with_alphabet(bsx::Alphabet::<58>::RIPPLE)
+    ///     bsx::decode("he11owor1d")
+    ///         .with_alphabet(bsx::StaticAlphabet::RIPPLE)
     ///         .into_vec()?);
     /// # Ok::<(), bsx::decode::Error>(())
     /// ```
-    pub fn with_alphabet(self, alpha: &'a Alphabet<LEN>) -> Self {
-        DecodeBuilder { alpha, ..self }
+    pub fn with_alphabet<B>(self, alpha: B) -> DecodeBuilder<I, B> {
+        DecodeBuilder {
+            input: self.input,
+            alpha,
+        }
     }
+}
 
+impl<I: AsRef<[u8]>, A: Alphabet> DecodeBuilder<I, A> {
     /// Decode into a new vector of bytes.
     ///
     /// See the documentation for [`bsx::decode`](crate::decode()) for an
@@ -75,7 +85,7 @@ impl<'a, I: AsRef<[u8]>, const LEN: usize> DecodeBuilder<'a, I, LEN> {
     /// ```rust
     /// assert_eq!(
     ///     vec![0x04, 0x30, 0x5e, 0x2b, 0x24, 0x73, 0xf0, 0x58],
-    ///     bsx::decode("he11owor1d", bsx::Alphabet::<58>::BITCOIN).into_vec()?);
+    ///     bsx::decode("he11owor1d").with_alphabet(bsx::StaticAlphabet::BITCOIN).into_vec()?);
     /// # Ok::<(), bsx::decode::Error>(())
     /// ```
     ///
@@ -101,31 +111,28 @@ impl<'a, I: AsRef<[u8]>, const LEN: usize> DecodeBuilder<'a, I, LEN> {
     ///
     /// ```rust
     /// let mut output = [0xFF; 10];
-    /// assert_eq!(8, bsx::decode("he11owor1d", bsx::Alphabet::<58>::BITCOIN).into(&mut output)?);
+    /// assert_eq!(8, bsx::decode("he11owor1d").with_alphabet(bsx::StaticAlphabet::BITCOIN).into(&mut output)?);
     /// assert_eq!(
     ///     [0x04, 0x30, 0x5e, 0x2b, 0x24, 0x73, 0xf0, 0x58, 0xFF, 0xFF],
     ///     output);
     /// # Ok::<(), bsx::decode::Error>(())
     /// ```
     pub fn into<O: AsMut<[u8]>>(self, mut output: O) -> Result<usize> {
-        decode_into(self.input.as_ref(), output.as_mut(), &self.alpha)
+        decode_into(self.input.as_ref(), output.as_mut(), self.alpha)
     }
 }
 
-fn decode_into<const LEN: usize>(
-    input: &[u8],
-    output: &mut [u8],
-    alpha: &Alphabet<LEN>,
-) -> Result<usize> {
+fn decode_into(input: &[u8], output: &mut [u8], alpha: impl Alphabet) -> Result<usize> {
     let mut index = 0;
-    let zero = alpha.encode[0];
+    let (len, decode, encode) = (alpha.len(), alpha.decode(), alpha.encode());
+    let zero = encode[0];
 
     for (i, c) in input.iter().enumerate() {
         if *c > 127 {
             return Err(Error::NonAsciiCharacter { index: i });
         }
 
-        let mut val = alpha.decode[*c as usize] as usize;
+        let mut val = decode[*c as usize] as usize;
         if val == 0xFF {
             return Err(Error::InvalidCharacter {
                 character: *c as char,
@@ -134,7 +141,7 @@ fn decode_into<const LEN: usize>(
         }
 
         for byte in &mut output[..index] {
-            val += (*byte as usize) * LEN;
+            val += (*byte as usize) * len;
             *byte = (val & 0xFF) as u8;
             val >>= 8;
         }

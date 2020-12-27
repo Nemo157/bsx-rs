@@ -26,20 +26,11 @@
 //! ## Basic example
 //!
 //! ```rust
-//! let decoded = bsx::decode("he11owor1d", bsx::Alphabet::<58>::BITCOIN).into_vec()?;
-//! let encoded = bsx::encode(decoded, bsx::Alphabet::<58>::BITCOIN).into_string();
-//! assert_eq!("he11owor1d", encoded);
-//! # Ok::<(), bsx::decode::Error>(())
-//! ```
-//!
-//! ## Changing the alphabet
-//!
-//! ```rust
-//! let decoded = bsx::decode("he11owor1d", bsx::Alphabet::<58>::BITCOIN)
-//!     .with_alphabet(bsx::Alphabet::RIPPLE)
+//! let decoded = bsx::decode("he11owor1d")
+//!     .with_alphabet(bsx::StaticAlphabet::RIPPLE)
 //!     .into_vec()?;
-//! let encoded = bsx::encode(decoded, bsx::Alphabet::<58>::BITCOIN)
-//!     .with_alphabet(bsx::Alphabet::FLICKR)
+//! let encoded = bsx::encode(decoded)
+//!     .with_alphabet(bsx::StaticAlphabet::FLICKR)
 //!     .into_string();
 //! assert_eq!("4DSSNaN1SC", encoded);
 //! # Ok::<(), bsx::decode::Error>(())
@@ -49,8 +40,8 @@
 //!
 //! ```rust
 //! let (mut decoded, mut encoded) = ([0xFF; 8], String::with_capacity(10));
-//! bsx::decode("he11owor1d", bsx::Alphabet::<58>::BITCOIN).into(&mut decoded)?;
-//! bsx::encode(decoded, bsx::Alphabet::<58>::BITCOIN).into(&mut encoded)?;
+//! bsx::decode("he11owor1d").with_alphabet(bsx::StaticAlphabet::BITCOIN).into(&mut decoded)?;
+//! bsx::encode(decoded).with_alphabet(bsx::StaticAlphabet::BITCOIN).into(&mut encoded)?;
 //! assert_eq!("he11owor1d", encoded);
 //! # Ok::<(), Box<dyn std::error::Error>>(())
 //! ```
@@ -63,7 +54,7 @@ extern crate alloc;
 
 pub mod alphabet;
 #[doc(inline)]
-pub use alphabet::Alphabet;
+pub use alphabet::{Alphabet, DynamicAlphabet, StaticAlphabet};
 
 pub mod decode;
 pub mod encode;
@@ -72,22 +63,13 @@ pub mod encode;
 ///
 /// # Examples
 ///
-/// ## Basic example
-///
-/// ```rust
-/// assert_eq!(
-///     vec![0x04, 0x30, 0x5e, 0x2b, 0x24, 0x73, 0xf0, 0x58],
-///     bsx::decode("he11owor1d", bsx::Alphabet::<58>::BITCOIN).into_vec()?);
-/// # Ok::<(), bsx::decode::Error>(())
-/// ```
-///
 /// ## Changing the alphabet
 ///
 /// ```rust
 /// assert_eq!(
 ///     vec![0x60, 0x65, 0xe7, 0x9b, 0xba, 0x2f, 0x78],
-///     bsx::decode("he11owor1d", bsx::Alphabet::<58>::BITCOIN)
-///         .with_alphabet(bsx::Alphabet::RIPPLE)
+///     bsx::decode("he11owor1d")
+///         .with_alphabet(bsx::StaticAlphabet::RIPPLE)
 ///         .into_vec()?);
 /// # Ok::<(), bsx::decode::Error>(())
 /// ```
@@ -96,7 +78,7 @@ pub mod encode;
 ///
 /// ```rust
 /// let mut output = [0xFF; 10];
-/// assert_eq!(8, bsx::decode("he11owor1d", bsx::Alphabet::<58>::BITCOIN).into(&mut output)?);
+/// assert_eq!(8, bsx::decode("he11owor1d").with_alphabet(bsx::StaticAlphabet::BITCOIN).into(&mut output)?);
 /// assert_eq!(
 ///     [0x04, 0x30, 0x5e, 0x2b, 0x24, 0x73, 0xf0, 0x58, 0xFF, 0xFF],
 ///     output);
@@ -110,7 +92,7 @@ pub mod encode;
 /// ```rust
 /// assert_eq!(
 ///     bsx::decode::Error::InvalidCharacter { character: 'l', index: 2 },
-///     bsx::decode("hello world", bsx::Alphabet::<58>::BITCOIN).into_vec().unwrap_err());
+///     bsx::decode("hello world").with_alphabet(bsx::StaticAlphabet::BITCOIN).into_vec().unwrap_err());
 /// ```
 ///
 /// ### Non-ASCII Character
@@ -118,7 +100,7 @@ pub mod encode;
 /// ```rust
 /// assert_eq!(
 ///     bsx::decode::Error::NonAsciiCharacter { index: 5 },
-///     bsx::decode("he11o🇳🇿", bsx::Alphabet::<58>::BITCOIN).into_vec().unwrap_err());
+///     bsx::decode("he11o🇳🇿").with_alphabet(bsx::StaticAlphabet::BITCOIN).into_vec().unwrap_err());
 /// ```
 ///
 /// ### Too Small Buffer
@@ -131,13 +113,10 @@ pub mod encode;
 /// let mut output = [0; 7];
 /// assert_eq!(
 ///     bsx::decode::Error::BufferTooSmall,
-///     bsx::decode("he11owor1d", bsx::Alphabet::<58>::BITCOIN).into(&mut output).unwrap_err());
+///     bsx::decode("he11owor1d").with_alphabet(bsx::StaticAlphabet::BITCOIN).into(&mut output).unwrap_err());
 /// ```
-pub fn decode<I: AsRef<[u8]>, const LEN: usize>(
-    input: I,
-    alphabet: &Alphabet<LEN>,
-) -> decode::DecodeBuilder<'_, I, LEN> {
-    decode::DecodeBuilder::new(input, alphabet)
+pub fn decode<I: AsRef<[u8]>>(input: I) -> decode::DecodeBuilder<I, alphabet::Unspecified> {
+    decode::DecodeBuilder::new(input)
 }
 
 /// Setup encoder for the given bytes using the given alphabet
@@ -148,7 +127,7 @@ pub fn decode<I: AsRef<[u8]>, const LEN: usize>(
 ///
 /// ```rust
 /// let input = [0x04, 0x30, 0x5e, 0x2b, 0x24, 0x73, 0xf0, 0x58];
-/// assert_eq!("he11owor1d", bsx::encode(input, bsx::Alphabet::<58>::BITCOIN).into_string());
+/// assert_eq!("he11owor1d", bsx::encode(input).with_alphabet(bsx::StaticAlphabet::BITCOIN).into_string());
 /// ```
 ///
 /// ## Changing the alphabet
@@ -157,8 +136,8 @@ pub fn decode<I: AsRef<[u8]>, const LEN: usize>(
 /// let input = [0x60, 0x65, 0xe7, 0x9b, 0xba, 0x2f, 0x78];
 /// assert_eq!(
 ///     "he11owor1d",
-///     bsx::encode(input, bsx::Alphabet::<58>::BITCOIN)
-///         .with_alphabet(bsx::Alphabet::RIPPLE)
+///     bsx::encode(input)
+///         .with_alphabet(bsx::StaticAlphabet::RIPPLE)
 ///         .into_string());
 /// ```
 ///
@@ -167,7 +146,7 @@ pub fn decode<I: AsRef<[u8]>, const LEN: usize>(
 /// ```rust
 /// let input = [0x04, 0x30, 0x5e, 0x2b, 0x24, 0x73, 0xf0, 0x58];
 /// let mut output = "goodbye world".to_owned();
-/// bsx::encode(input, bsx::Alphabet::<58>::BITCOIN).into(&mut output)?;
+/// bsx::encode(input).with_alphabet(bsx::StaticAlphabet::BITCOIN).into(&mut output)?;
 /// assert_eq!("he11owor1d", output);
 /// # Ok::<(), bsx::encode::Error>(())
 /// ```
@@ -183,11 +162,8 @@ pub fn decode<I: AsRef<[u8]>, const LEN: usize>(
 /// let mut output = [0; 7];
 /// assert_eq!(
 ///     bsx::encode::Error::BufferTooSmall,
-///     bsx::encode(input, bsx::Alphabet::<58>::BITCOIN).into(&mut output[..]).unwrap_err());
+///     bsx::encode(input).with_alphabet(bsx::StaticAlphabet::BITCOIN).into(&mut output[..]).unwrap_err());
 /// ```
-pub fn encode<I: AsRef<[u8]>, const LEN: usize>(
-    input: I,
-    alphabet: &Alphabet<LEN>,
-) -> encode::EncodeBuilder<'_, I, LEN> {
-    encode::EncodeBuilder::new(input, alphabet)
+pub fn encode<I: AsRef<[u8]>>(input: I) -> encode::EncodeBuilder<I, alphabet::Unspecified> {
+    encode::EncodeBuilder::new(input)
 }

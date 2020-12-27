@@ -3,7 +3,9 @@ use std::io::{self, Read, Write};
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut input = String::new();
     io::stdin().read_to_string(&mut input)?;
-    let data = &bsx::decode(input.trim(), bsx::Alphabet::<58>::BITCOIN).into_vec()?;
+    let data = &bsx::decode(input.trim())
+        .with_alphabet(bsx::StaticAlphabet::BITCOIN)
+        .into_vec()?;
     io::stdout().write_all(&data)?;
     Ok(())
 }
